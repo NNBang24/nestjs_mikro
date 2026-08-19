@@ -16,13 +16,10 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Post()
-  create(
-    @Body('email') email: string,
-    @Body('password') password: string,
-    @Body('name') name: string,
-  ) {
+  create(@Body() createUserDto: CreateUserDto) {
     // const myEmail: string = req.body.email // string
-    return this.usersService.create(email , password , name)
+
+    return this.usersService.create(createUserDto);
   }
 
   @Get()
@@ -32,7 +29,8 @@ export class UsersController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.usersService.findOne(+id);
+    // const id: string = req.params.id
+    return this.usersService.findOne(id); // dùng dấu + là chuyển từ String -> Number
   }
 
   @Patch(':id')

@@ -1,4 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@mikro-orm/nestjs';
@@ -17,31 +21,61 @@ export class UsersService {
     const hash = bcrypt.hashSync(password, salt);
     return hash;
   };
-  // create(createUserDto: CreateUserDto) {
-  async create(email: string, password: string, name: string) {
-    const hashPassword = this.getHashPassword(password);
+  async create(createUserDto: CreateUserDto) {
+    // return createUserDto;
+    // async create(email: string, password: string, name: string) {
+    const hashPassword = this.getHashPassword(createUserDto.password);
     const user = this.usersRepository.create({
-      email,
+      email: createUserDto.email,
       password: hashPassword,
-      name,
+      name: createUserDto.name,
     });
     await this.usersRepository.getEntityManager().flush();
     return user;
   }
 
-  findAll() {
-    return `This action returns all users`;
+  async findAll() {
+    const users = await this.usersRepository.findAll();
+    return users;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
+  async findOne(id: string) {
+    const numberID = Number(id);
+    if (isNaN(numberID)) {
+      throw new BadRequestException(`ID nguoi dung khong hop le ${id}`); // day la loi 400
+    }
+    const user = await this.usersRepository.findOne({
+      id: Number(id),
+    });
+    if (!user) {
+      throw new NotFoundException(`khong tim thay nguoi dung voi id: ${id}`);
+    }
+    return user;
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
+  async update(id: number, updateUserDto: UpdateUserDto) {
+    const user = await this.usersRepository.findOne({ id });
+    if (!user) {
+      throw new NotFoundException(`khong tim thay nguoi dung id : ${id}`);
+    }
+
+    this.usersRepository.assign(user, updateUserDto);
+    await this.usersRepository.getEntityManager().flush();
+    return user;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} user`;
+  async remove(id: number) {
+    const user = await this.usersRepository.findOne({ id });
+    if (!user) {
+      throw new NotFoundException(`khong tim thay nguoi dung id : ${id}`);
+    }
+
+    const em = this.usersRepository.getEntityManager();
+    em.remove(user);
+    await em.flush();
+
+    return {
+      message: `da xoa thanh cong nguoi dung id: ${id}`,
+    };
   }
 }
