@@ -53,6 +53,16 @@ export class UsersService {
     return user;
   }
 
+  async findOneByUsername(username: string) {
+    return await this.usersRepository.findOne({
+      email: username,
+    });
+  }
+
+  isValidPassword(password: string, hashPassword: string) {
+    return bcrypt.compareSync(password, hashPassword);
+  }
+
   async update(id: number, updateUserDto: UpdateUserDto) {
     const user = await this.usersRepository.findOne({ id });
     if (!user) {
